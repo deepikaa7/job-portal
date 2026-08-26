@@ -19,7 +19,7 @@ export const register = async (req, res) => {  // tala vako kunai empty xa ki xa
        if(user){
       return res.status(404).json({
                 message: " email already exists",
-                success: false,f
+                success: false,
             });
 
     } 
@@ -39,7 +39,7 @@ export const register = async (req, res) => {  // tala vako kunai empty xa ki xa
 
 return res.status(200).json({
      message:`account crested sucessfully ${fullname}`,
-     sucess: true,
+     success: true,
 
 });
 }
@@ -77,7 +77,7 @@ let isMatch = await bcrypt.compare(password,user.password);
 if(!isMatch){
     return res.status(404).json({
     message: "incorrect passsword and email",
-    sucess:false,
+    success:false,
 
     });
 }
@@ -86,7 +86,7 @@ if(!isMatch){
 if(user.role !== role){
     return res.status(403).json({
     message: "you don't have the necessary role to acess this esources",
-    sucess:false,
+    success:false,
 
     });
 
@@ -119,7 +119,7 @@ user ={
  })
 .json({
   message: `welcomee back ${user.fullname}`, user,
-   sucess:true,
+   success:true,
 });
 
 
@@ -141,7 +141,7 @@ export const logout =( req , res) => {
     try{
         return res.status(200).cookie("token", "",{maxAge: 0}).json({
             message : "logged out sucessfully ",
-            sucess:true,
+            success:true,
 
         });
     }
@@ -177,7 +177,9 @@ export const updateProfile = async (req,res) => {
 
  //skill string format ma xa teslao array ma lagne 
  let skillsArray ;
-if (skills){const skillsArray = skills.split(',');
+
+if (skills){
+     skillsArray = skills.split(',');
 
 }
   
@@ -239,7 +241,7 @@ user ={
 return res.status(200).json({
     message:"profile updated sucessfully ",
     user,
-    sucess:true,
+    success:true,
 });
 
 

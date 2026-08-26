@@ -3,19 +3,23 @@ import {Company} from "../models/company.model.js";
 
 export const registerCompany = async(req ,res) =>{
     try{
-        const {companyName} = req.body;
+        const {companyName , description , website, location} = req.body;
 
         if(!companyName){
-            return res.status(404).json({ message: "company name is required "});
+            return res.status(404).json({ message: "company name is required ", sucess:false});
 
         }
 
         let company = await Company.findOne({ name: companyName});
+
         if(company){
             return res.status(400).json({ message: "company alread exists"});
         }
          company = await Company.create ({
             name :companyName,
+             description,
+            website,
+            location,
             userId : req.id
          });
      
@@ -33,12 +37,16 @@ export const getAllCompanies = async (req , res) => {
      try {
        const userId = req.id; //loogin user ko user id matrai ho 
        const companies = await Company.find({userId});
-       if (!companies){
-        return res.status(404).json({ message: "no companies  is found "});
-
-       }
-
+      if (!companies){
+        return res.status(404).json({ message: "no companies found"});
+      }
+     return res.status(200).json({
+        companies,
+        sucess: true
+     });
      }
+
+
      catch(error){
     console.error(error);
 
