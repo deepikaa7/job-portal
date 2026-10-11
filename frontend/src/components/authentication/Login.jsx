@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 import Navbar from "../components_lite/Navbar";
 
@@ -10,11 +12,11 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 
 import { USER_API_ENDPOINT } from "@/utils/data.js";
+import { setLoading, setUser } from "@/redux/authSlice";
 
 // ================= LOGIN COMPONENT =================
 
 const Login = () => {
-
   // ================= FORM DATA =================
 
   const [input, setInput] = useState({
@@ -23,7 +25,10 @@ const Login = () => {
     role: "Student",
   });
 
-  const [loading, setLoading] = useState(false);
+  // ================= REDUX STORE =================
+
+  const dispatch = useDispatch();
+  const { loading } = useSelector((state) => state.auth);
 
   const navigate = useNavigate();
 
@@ -55,7 +60,8 @@ const Login = () => {
     if (loading) return;
 
     try {
-      setLoading(true);
+      // Start loading through Redux
+      dispatch(setLoading(true));
 
       // ================= LOGIN API CALL =================
 
@@ -77,14 +83,16 @@ const Login = () => {
       // ================= SUCCESS RESPONSE =================
 
       if (res.data.success || res.data.sucess) {
+        // Save user details in Redux
+        dispatch(setUser(res.data.user));
+
         toast.success(res.data.message || "Login successful!");
 
-        // Go to Home page after successful login
+        // Navigate to Home page
         navigate("/");
       } else {
         toast.error(res.data.message || "Login failed.");
       }
-
     } catch (error) {
       console.error(
         "Login Error:",
@@ -95,9 +103,9 @@ const Login = () => {
         error.response?.data?.message ||
           "Login failed. Please check your email and password."
       );
-
     } finally {
-      setLoading(false);
+      // Stop loading after success or error
+      dispatch(setLoading(false));
     }
   };
 
@@ -125,14 +133,12 @@ const Login = () => {
             <div className="mx-auto mb-2 h-1 w-8 rounded-full bg-[#B86B7A]" />
 
             <h1 className="font-serif text-xl font-bold text-[#3B0D18]">
-              Welcome Back 
+              Welcome Back
             </h1>
 
             <p className="mt-1 text-[11px] text-[#6B2638]">
               Login to your{" "}
-              <span className="font-semibold">
-                Job Portal
-              </span>{" "}
+              <span className="font-semibold">Job Portal</span>{" "}
               account ☆
             </p>
 
@@ -140,10 +146,7 @@ const Login = () => {
 
           {/* ================= LOGIN FORM ================= */}
 
-          <form
-            className="space-y-4"
-            onSubmit={submitHandler}
-          >
+          <form className="space-y-4" onSubmit={submitHandler}>
 
             {/* ================= EMAIL ================= */}
 
@@ -220,6 +223,7 @@ const Login = () => {
 
                 <button
                   type="button"
+                  disabled={loading}
                   onClick={() => selectRole("Student")}
                   aria-pressed={input.role === "Student"}
                   className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200 ${
@@ -235,6 +239,7 @@ const Login = () => {
 
                 <button
                   type="button"
+                  disabled={loading}
                   onClick={() => selectRole("Recruiter")}
                   aria-pressed={input.role === "Recruiter"}
                   className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200 ${
@@ -257,7 +262,14 @@ const Login = () => {
               disabled={loading}
               className="mt-2 h-9 w-full rounded-lg bg-[#6B2638] text-xs font-medium text-[#F8EFE3] transition-all duration-200 hover:bg-[#3B0D18] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "Logging in..." : "Login"}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Logging in...
+                </>
+              ) : (
+                "Login"
+              )}
             </Button>
 
           </form>

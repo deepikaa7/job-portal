@@ -1,8 +1,9 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 import Navbar from "../components_lite/Navbar";
 import { Label } from "../ui/label";
@@ -14,11 +15,12 @@ import {
 } from "../ui/radio-group";
 
 import { USER_API_ENDPOINT } from "@/utils/data";
+import { setLoading, setUser } from "@/redux/authSlice";
 
 // ================= REGISTER COMPONENT =================
 
 const Register = () => {
-  // ================= Input Data =================
+  // ================= FORM DATA =================
 
   const [input, setInput] = useState({
     fullname: "",
@@ -29,10 +31,14 @@ const Register = () => {
     password: "",
   });
 
-  const [loading, setLoading] = useState(false);
+  // ================= REDUX STORE =================
+
+  const dispatch = useDispatch();
+  const { loading } = useSelector((state) => state.auth);
+
   const navigate = useNavigate();
 
-  // ================= Input Handler =================
+  // ================= INPUT HANDLER =================
 
   const changeEventHandler = (e) => {
     const { name, value } = e.target;
@@ -43,7 +49,7 @@ const Register = () => {
     }));
   };
 
-  // ================= Profile Photo Handler =================
+  // ================= PROFILE PHOTO HANDLER =================
 
   const changeFileHandler = (e) => {
     const selectedFile = e.target.files?.[0];
@@ -62,7 +68,7 @@ const Register = () => {
     }));
   };
 
-  // ================= Submit Handler =================
+  // ================= SUBMIT HANDLER =================
 
   const submitHandler = async (e) => {
     e.preventDefault();
@@ -74,6 +80,7 @@ const Register = () => {
       return;
     }
 
+    // Create FormData for text fields and profile photo
     const formData = new FormData();
 
     formData.append("fullname", input.fullname.trim());
@@ -87,9 +94,10 @@ const Register = () => {
     }
 
     try {
-      setLoading(true);
+      // Start Redux loading
+      dispatch(setLoading(true));
 
-      // ================= Backend API Call =================
+      // ================= REGISTER API CALL =================
 
       const res = await axios.post(
         `${USER_API_ENDPOINT}/register`,
@@ -99,9 +107,14 @@ const Register = () => {
         }
       );
 
-      // Supports both response spellings
+      // ================= SUCCESS RESPONSE =================
 
       if (res.data.success || res.data.sucess) {
+        // Save returned user in Redux if provided
+        if (res.data.user) {
+          dispatch(setUser(res.data.user));
+        }
+
         toast.success(
           res.data.message || "Account created successfully!"
         );
@@ -123,7 +136,8 @@ const Register = () => {
           "Registration failed. Please try again."
       );
     } finally {
-      setLoading(false);
+      // Stop loading after success or error
+      dispatch(setLoading(false));
     }
   };
 
@@ -148,7 +162,7 @@ const Register = () => {
 
           <div className="mb-4 text-center">
 
-            <div className="mx-auto mb-2 h-1 w-8 rounded-full bg-[#B86B7A]"></div>
+            <div className="mx-auto mb-2 h-1 w-8 rounded-full bg-[#B86B7A]" />
 
             <h1 className="font-serif text-xl font-bold text-[#3B0D18]">
               Create Your Account
@@ -162,10 +176,7 @@ const Register = () => {
 
           {/* ================= REGISTER FORM ================= */}
 
-          <form
-            className="space-y-3"
-            onSubmit={submitHandler}
-          >
+          <form className="space-y-3" onSubmit={submitHandler}>
 
             {/* ================= PROFILE PHOTO ================= */}
 
@@ -223,6 +234,7 @@ const Register = () => {
                 value={input.fullname}
                 onChange={changeEventHandler}
                 placeholder="Your full name"
+                autoComplete="name"
                 required
                 className="h-9 border-[#D9A6A6] bg-white text-xs text-[#3B0D18] placeholder:text-[#9A737A] focus-visible:border-[#6B2638] focus-visible:ring-[#D9A6A6]"
               />
@@ -247,6 +259,7 @@ const Register = () => {
                 value={input.email}
                 onChange={changeEventHandler}
                 placeholder="Your email address"
+                autoComplete="email"
                 required
                 className="h-9 border-[#D9A6A6] bg-white text-xs text-[#3B0D18] placeholder:text-[#9A737A] focus-visible:border-[#6B2638] focus-visible:ring-[#D9A6A6]"
               />
@@ -271,6 +284,7 @@ const Register = () => {
                 value={input.phoneNumber}
                 onChange={changeEventHandler}
                 placeholder="Your phone number"
+                autoComplete="tel"
                 required
                 className="h-9 border-[#D9A6A6] bg-white text-xs text-[#3B0D18] placeholder:text-[#9A737A] focus-visible:border-[#6B2638] focus-visible:ring-[#D9A6A6]"
               />
@@ -294,6 +308,7 @@ const Register = () => {
                   }))
                 }
                 className="flex gap-2"
+                disabled={loading}
               >
 
                 {/* ================= STUDENT ================= */}
@@ -356,6 +371,7 @@ const Register = () => {
                 value={input.password}
                 onChange={changeEventHandler}
                 placeholder="Create a password"
+                autoComplete="new-password"
                 required
                 className="h-9 border-[#D9A6A6] bg-white text-xs text-[#3B0D18] placeholder:text-[#9A737A] focus-visible:border-[#6B2638] focus-visible:ring-[#D9A6A6]"
               />
@@ -369,7 +385,14 @@ const Register = () => {
               disabled={loading}
               className="mt-1 h-9 w-full rounded-lg bg-[#6B2638] text-xs font-medium text-[#F8EFE3] transition-all duration-200 hover:bg-[#3B0D18] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "Creating Account..." : "Create Account"}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Account...
+                </>
+              ) : (
+                "Create Account"
+              )}
             </Button>
 
           </form>
