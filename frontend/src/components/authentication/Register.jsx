@@ -1,5 +1,9 @@
+
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { toast } from "sonner";
+
 import Navbar from "../components_lite/Navbar";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
@@ -9,61 +13,121 @@ import {
   RadioGroupItem,
 } from "../ui/radio-group";
 
-import axios from "axios";
+import { USER_API_ENDPOINT } from "@/utils/data";
+
+// ================= REGISTER COMPONENT =================
 
 const Register = () => {
-
-  // ================= Data line =================
+  // ================= Input Data =================
 
   const [input, setInput] = useState({
     fullname: "",
     email: "",
     role: "",
-    file: "",
+    file: null,
     phoneNumber: "",
     password: "",
   });
 
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   // ================= Input Handler =================
 
   const changeEventHandler = (e) => {
-    setInput({
-      ...input,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    setInput((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-
-  // ================= Photo Handler =================
+  // ================= Profile Photo Handler =================
 
   const changeFileHandler = (e) => {
-    setInput({
-      ...input,
-      file: e.target.files?.[0],
-    });
+    const selectedFile = e.target.files?.[0];
+
+    if (!selectedFile) return;
+
+    if (!selectedFile.type.startsWith("image/")) {
+      toast.error("Please select a valid image.");
+      e.target.value = "";
+      return;
+    }
+
+    setInput((prev) => ({
+      ...prev,
+      file: selectedFile,
+    }));
   };
 
-
-  // ================= Submit =================
+  // ================= Submit Handler =================
 
   const submitHandler = async (e) => {
     e.preventDefault();
 
-    console.log(input);
+    if (loading) return;
 
-    // backend API call 
-   try {
-  const res = awake axios.post()
-   } catch(error){
-    console.log(error);
-   }
+    if (!input.role) {
+      toast.error("Please select Student or Recruiter.");
+      return;
+    }
 
+    const formData = new FormData();
 
+    formData.append("fullname", input.fullname.trim());
+    formData.append("email", input.email.trim());
+    formData.append("password", input.password);
+    formData.append("role", input.role);
+    formData.append("phoneNumber", input.phoneNumber.trim());
 
+    if (input.file) {
+      formData.append("file", input.file);
+    }
 
+    try {
+      setLoading(true);
+
+      // ================= Backend API Call =================
+
+      const res = await axios.post(
+        `${USER_API_ENDPOINT}/register`,
+        formData,
+        {
+          withCredentials: true,
+        }
+      );
+
+      // Supports both response spellings
+
+      if (res.data.success || res.data.sucess) {
+        toast.success(
+          res.data.message || "Account created successfully!"
+        );
+
+        navigate("/login");
+      } else {
+        toast.error(
+          res.data.message || "Registration failed."
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Registration Error:",
+        error.response?.data || error.message
+      );
+
+      toast.error(
+        error.response?.data?.message ||
+          "Registration failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // ================= UI =================
 
   return (
     <div className="min-h-screen bg-[#F8EFE3] text-[#3B0D18]">
@@ -72,16 +136,13 @@ const Register = () => {
 
       <Navbar />
 
-
       {/* ================= REGISTER SECTION ================= */}
 
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-6">
 
-
         {/* ================= REGISTER CARD ================= */}
 
         <div className="w-full max-w-[350px] rounded-2xl border border-[#E3C4C4] bg-[#FFF9F3] px-6 py-5 shadow-md">
-
 
           {/* ================= CARD HEADER ================= */}
 
@@ -99,7 +160,6 @@ const Register = () => {
 
           </div>
 
-
           {/* ================= REGISTER FORM ================= */}
 
           <form
@@ -107,15 +167,24 @@ const Register = () => {
             onSubmit={submitHandler}
           >
 
-
             {/* ================= PROFILE PHOTO ================= */}
 
             <div className="flex flex-col items-center space-y-2">
 
               <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-[#D9A6A6] bg-[#F8EFE3]">
-                <span className="text-xl text-[#8F4052]">
-                  ☺
-                </span>
+
+                {input.file ? (
+                  <img
+                    src={URL.createObjectURL(input.file)}
+                    alt="Profile preview"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xl text-[#8F4052]">
+                    ☺
+                  </span>
+                )}
+
               </div>
 
               <label
@@ -136,7 +205,6 @@ const Register = () => {
 
             </div>
 
-
             {/* ================= FULL NAME ================= */}
 
             <div className="space-y-1">
@@ -155,11 +223,11 @@ const Register = () => {
                 value={input.fullname}
                 onChange={changeEventHandler}
                 placeholder="Your full name"
+                required
                 className="h-9 border-[#D9A6A6] bg-white text-xs text-[#3B0D18] placeholder:text-[#9A737A] focus-visible:border-[#6B2638] focus-visible:ring-[#D9A6A6]"
               />
 
             </div>
-
 
             {/* ================= EMAIL ================= */}
 
@@ -179,13 +247,13 @@ const Register = () => {
                 value={input.email}
                 onChange={changeEventHandler}
                 placeholder="Your email address"
+                required
                 className="h-9 border-[#D9A6A6] bg-white text-xs text-[#3B0D18] placeholder:text-[#9A737A] focus-visible:border-[#6B2638] focus-visible:ring-[#D9A6A6]"
               />
 
             </div>
 
-
-            {/* ================= PHONE ================= */}
+            {/* ================= PHONE NUMBER ================= */}
 
             <div className="space-y-1">
 
@@ -203,11 +271,11 @@ const Register = () => {
                 value={input.phoneNumber}
                 onChange={changeEventHandler}
                 placeholder="Your phone number"
+                required
                 className="h-9 border-[#D9A6A6] bg-white text-xs text-[#3B0D18] placeholder:text-[#9A737A] focus-visible:border-[#6B2638] focus-visible:ring-[#D9A6A6]"
               />
 
             </div>
-
 
             {/* ================= ACCOUNT TYPE ================= */}
 
@@ -220,14 +288,13 @@ const Register = () => {
               <RadioGroup
                 value={input.role}
                 onValueChange={(value) =>
-                  setInput({
-                    ...input,
+                  setInput((prev) => ({
+                    ...prev,
                     role: value,
-                  })
+                  }))
                 }
                 className="flex gap-2"
               >
-
 
                 {/* ================= STUDENT ================= */}
 
@@ -247,7 +314,6 @@ const Register = () => {
                   </span>
 
                 </label>
-
 
                 {/* ================= RECRUITER ================= */}
 
@@ -272,7 +338,6 @@ const Register = () => {
 
             </div>
 
-
             {/* ================= PASSWORD ================= */}
 
             <div className="space-y-1">
@@ -291,23 +356,23 @@ const Register = () => {
                 value={input.password}
                 onChange={changeEventHandler}
                 placeholder="Create a password"
+                required
                 className="h-9 border-[#D9A6A6] bg-white text-xs text-[#3B0D18] placeholder:text-[#9A737A] focus-visible:border-[#6B2638] focus-visible:ring-[#D9A6A6]"
               />
 
             </div>
 
-
             {/* ================= REGISTER BUTTON ================= */}
 
             <Button
               type="submit"
-              className="mt-1 h-9 w-full rounded-lg bg-[#6B2638] text-xs font-medium text-[#F8EFE3] transition-all duration-200 hover:bg-[#3B0D18]"
+              disabled={loading}
+              className="mt-1 h-9 w-full rounded-lg bg-[#6B2638] text-xs font-medium text-[#F8EFE3] transition-all duration-200 hover:bg-[#3B0D18] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Create Account
+              {loading ? "Creating Account..." : "Create Account"}
             </Button>
 
           </form>
-
 
           {/* ================= LOGIN LINK ================= */}
 

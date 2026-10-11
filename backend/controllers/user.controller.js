@@ -7,7 +7,8 @@ import jwt from "jsonwebtoken";
 export const register = async (req, res) => {  // tala vako kunai empty xa ki xaina hereko
     try{
         const {fullname,email, phoneNumber,  password,role} = req.body;
-       
+       console.log("Registration request received!");
+console.log("Request body:", req.body); 
         if(!fullname||!email || !phoneNumber ||!password ||!role){
             return res.status(404).json({
                 message: "Missing required fields",
